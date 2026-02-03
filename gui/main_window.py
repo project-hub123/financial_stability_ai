@@ -9,14 +9,14 @@
 
 Назначение файла:
 Главное окно десктопного приложения.
-Обеспечивает выбор пользователя, разграничение прав доступа,
-навигацию по функциям интеллектуальной системы и доступ
+Обеспечивает разграничение прав доступа,
+навигацию по функциям системы и доступ
 к справочной информации.
 """
 
 from PyQt5.QtWidgets import (
-    QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout,
-    QComboBox, QMessageBox, QFrame
+    QWidget, QLabel, QPushButton, QVBoxLayout,
+    QHBoxLayout, QMessageBox, QFrame
 )
 from PyQt5.QtCore import Qt
 
@@ -28,13 +28,14 @@ from gui.help_window import HelpWindow
 
 
 class MainWindow(QWidget):
-    def __init__(self):
+    def __init__(self, role: str):
         super().__init__()
 
-        # Роли: Пользователь / Аналитик / Администратор
-        self.current_role = "Пользователь"
+        # Роль пользователя задаётся при авторизации
+        self.current_role = role
 
         self.init_ui()
+        self.update_access_rights()
 
     # ---------------------------------------------------------
     # ИНТЕРФЕЙС
@@ -87,10 +88,6 @@ class MainWindow(QWidget):
             QPushButton#danger:hover {
                 background-color: #4b5563;
             }
-            QComboBox {
-                padding: 6px;
-                border-radius: 5px;
-            }
         """)
 
         main_layout = QVBoxLayout()
@@ -117,30 +114,18 @@ class MainWindow(QWidget):
         main_layout.addWidget(line)
 
         # -----------------------------------------------------
-        # Панель пользователя
+        # Информация о пользователе
         # -----------------------------------------------------
 
         user_layout = QHBoxLayout()
 
-        role_label = QLabel("Текущая роль:")
+        role_label = QLabel("Роль пользователя:")
         self.role_value = QLabel(self.current_role)
         self.role_value.setObjectName("role")
-
-        self.role_selector = QComboBox()
-        self.role_selector.addItems([
-            "Пользователь",
-            "Аналитик",
-            "Администратор"
-        ])
-        self.role_selector.currentTextChanged.connect(
-            self.change_role
-        )
 
         user_layout.addWidget(role_label)
         user_layout.addWidget(self.role_value)
         user_layout.addStretch()
-        user_layout.addWidget(QLabel("Сменить роль:"))
-        user_layout.addWidget(self.role_selector)
 
         main_layout.addLayout(user_layout)
 
@@ -178,21 +163,12 @@ class MainWindow(QWidget):
 
         self.setLayout(main_layout)
 
-        self.update_access_rights()
-
     # ---------------------------------------------------------
     # ЛОГИКА РОЛЕЙ
     # ---------------------------------------------------------
 
-    def change_role(self, role: str):
-        self.current_role = role
-        self.role_value.setText(role)
-        self.update_access_rights()
-
     def update_access_rights(self):
-        """
-        Разграничение доступа в зависимости от роли пользователя.
-        """
+        """Разграничение доступа в зависимости от роли."""
 
         if self.current_role == "Пользователь":
             self.btn_analysis.setEnabled(False)
@@ -222,7 +198,7 @@ class MainWindow(QWidget):
             QMessageBox.warning(
                 self,
                 "Доступ запрещён",
-                "Анализ коэффициентов доступен\n"
+                "Анализ коэффициентов доступен "
                 "только аналитику и администратору."
             )
             return
@@ -235,7 +211,7 @@ class MainWindow(QWidget):
             QMessageBox.warning(
                 self,
                 "Доступ запрещён",
-                "Обучение модели доступно\n"
+                "Обучение модели доступно "
                 "только администратору."
             )
             return
@@ -243,8 +219,8 @@ class MainWindow(QWidget):
         QMessageBox.information(
             self,
             "Обучение модели",
-            "Запуск процедуры обучения модели\n"
-            "осуществляется из панели администратора."
+            "Запуск обучения осуществляется "
+            "из панели администратора."
         )
 
     def on_admin(self):
@@ -252,7 +228,7 @@ class MainWindow(QWidget):
             QMessageBox.warning(
                 self,
                 "Доступ запрещён",
-                "Панель администратора доступна\n"
+                "Панель администратора доступна "
                 "только администратору."
             )
             return
