@@ -8,8 +8,8 @@
 (на примере ООО „Научно-технический центр "АРМ-Регистр"»)»
 
 Назначение модуля:
-Данный модуль реализует применение обученной модели
-машинного обучения для оценки финансовой устойчивости предприятия.
+Применение обученной модели машинного обучения
+для оценки финансовой устойчивости предприятия.
 
 Модуль используется:
 – в графическом интерфейсе пользователя;
@@ -20,29 +20,36 @@
 import os
 import joblib
 import pandas as pd
-import numpy as np
 
 from ml.features import (
     calculate_financial_ratios,
     interpret_financial_state
 )
 
+# ============================================================
+# ОПРЕДЕЛЕНИЕ КОРНЯ ПРОЕКТА
+# ============================================================
+
+# ml/predict.py → поднимаемся на уровень проекта
+PROJECT_ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..")
+)
+
+MODEL_PATH = os.path.join(
+    PROJECT_ROOT, "models", "model1.pkl"
+)
 
 # ============================================================
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 # ============================================================
 
 def load_model(model_path: str):
-    """
-    Загрузка обученной ML-модели с диска.
-    """
+    """Загрузка обученной ML-модели."""
     if not os.path.exists(model_path):
         raise FileNotFoundError(
             f"Файл модели не найден: {model_path}"
         )
-
-    model = joblib.load(model_path)
-    return model
+    return joblib.load(model_path)
 
 
 def prepare_input_data(input_data: dict) -> pd.DataFrame:
@@ -50,7 +57,6 @@ def prepare_input_data(input_data: dict) -> pd.DataFrame:
     Преобразование входных данных пользователя
     в DataFrame для дальнейшего анализа.
     """
-
     required_fields = [
         "year",
         "current_assets",
@@ -66,73 +72,66 @@ def prepare_input_data(input_data: dict) -> pd.DataFrame:
                 f"Отсутствует обязательное поле: {field}"
             )
 
-    df = pd.DataFrame([input_data])
-    return df
+    return pd.DataFrame([input_data])
 
 
 # ============================================================
 # ПРОГНОЗ ФИНАНСОВОЙ УСТОЙЧИВОСТИ
 # ============================================================
 
-def predict_stability(
-    input_data: dict,
-    model_path: str = "models/financial_stability_model.pkl"
-) -> dict:
+def predict_stability(input_data: dict) -> dict:
     """
     Прогноз финансовой устойчивости предприятия
     на основе введенных финансовых показателей.
     """
 
-    # Загрузка модели
-    model = load_model(model_path)
+    # загрузка модели
+    model = load_model(MODEL_PATH)
 
-    # Подготовка входных данных
+    # подготовка данных
     raw_df = prepare_input_data(input_data)
 
-    # Формирование признаков
+    # расчет признаков
     features = calculate_financial_ratios(raw_df)
 
-    # Прогноз класса
-    prediction = model.predict(features)[0]
+    # прогноз класса
+    prediction = int(model.predict(features)[0])
 
-    # Вероятность классов (если поддерживается моделью)
+    # вероятность устойчивости
+    probability_stable = None
     if hasattr(model, "predict_proba"):
-        probability = model.predict_proba(features)[0]
-        probability_stable = probability[1]
-    else:
-        probability_stable = None
+        probability_stable = float(
+            model.predict_proba(features)[0][1]
+        )
 
-    # Текстовая интерпретация коэффициентов
+    # текстовая интерпретация коэффициентов
     interpretation = interpret_financial_state(features)
 
-    result = {
-        "prediction": int(prediction),
+    return {
+        "prediction": prediction,
         "probability_stable": probability_stable,
         "features": features.round(3),
         "interpretation": interpretation.iloc[0, 0]
     }
 
-    return result
-
 
 # ============================================================
-# ТЕКСТОВАЯ ИНТЕРПРЕТАЦИЯ РЕЗУЛЬТАТА
+# ТЕКСТОВОЕ ЗАКЛЮЧЕНИЕ
 # ============================================================
 
 def interpret_prediction(result: dict) -> str:
     """
     Формирование итогового текстового заключения
-    по финансовому состоянию предприятия.
+    по финансовой устойчивости предприятия.
     """
 
-    if result["prediction"] == 1:
-        status = "ФИНАНСОВО УСТОЙЧИВОЕ"
-    else:
-        status = "ФИНАНСОВО НЕУСТОЙЧИВОЕ"
-
-    text = (
-        f"Результат оценки: предприятие {status}.\n"
+    status = (
+        "ФИНАНСОВО УСТОЙЧИВОЕ"
+        if result["prediction"] == 1
+        else "ФИНАНСОВО НЕУСТОЙЧИВОЕ"
     )
+
+    text = f"Результат оценки: предприятие {status}.\n"
 
     if result["probability_stable"] is not None:
         text += (
@@ -141,7 +140,7 @@ def interpret_prediction(result: dict) -> str:
         )
 
     text += (
-        "Анализ коэффициентов:\n"
+        "Анализ финансовых коэффициентов:\n"
         f"{result['interpretation']}"
     )
 
@@ -149,32 +148,22 @@ def interpret_prediction(result: dict) -> str:
 
 
 # ============================================================
-# САМОСТОЯТЕЛЬНЫЙ ЗАПУСК МОДУЛЯ
+# АВТОНОМНЫЙ ЗАПУСК (ТЕСТ)
 # ============================================================
 
 if __name__ == "__main__":
-    """
-    Пример автономного запуска модуля прогнозирования.
-    Используется для тестирования и демонстрации работы.
-    """
-
     test_input = {
         "year": 2023,
-        "current_assets": 1750000,
-        "current_liabilities": 780000,
-        "equity": 2100000,
-        "total_assets": 3600000,
-        "profit": 420000
+        "current_assets": 1_750_000,
+        "current_liabilities": 780_000,
+        "equity": 2_100_000,
+        "total_assets": 3_600_000,
+        "profit": 420_000
     }
 
-    try:
-        result = predict_stability(test_input)
+    result = predict_stability(test_input)
 
-        print("=== РЕЗУЛЬТАТ ПРОГНОЗА ===")
-        print(interpret_prediction(result))
-        print("\nИспользованные признаки:")
-        print(result["features"])
-
-    except Exception as e:
-        print("Ошибка при выполнении прогноза:")
-        print(str(e))
+    print("=== РЕЗУЛЬТАТ ПРОГНОЗА ===")
+    print(interpret_prediction(result))
+    print("\nИспользованные признаки:")
+    print(result["features"])
