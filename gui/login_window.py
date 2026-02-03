@@ -2,11 +2,6 @@
 ФИО автора: Кирченков Александр Николаевич
 Руководитель ВКР: Коротков Дмитрий Павлович
 
-Тема ВКР:
-«Интеллектуальный анализ финансовой устойчивости предприятия
-и проблемы ее повышения
-(на примере ООО „Научно-технический центр "АРМ-Регистр"»)»
-
 Назначение файла:
 Окно авторизации пользователей системы.
 Обеспечивает вход в приложение с учетом ролей доступа.
@@ -20,8 +15,8 @@ from PyQt5.QtCore import pyqtSignal
 
 
 class LoginWindow(QWidget):
-    # сигнал успешного входа (передаёт роль)
-    login_success = pyqtSignal(str)
+    # сигнал успешного входа (username, role)
+    login_success = pyqtSignal(str, str)
 
     def __init__(self):
         super().__init__()
@@ -29,7 +24,7 @@ class LoginWindow(QWidget):
 
     def init_ui(self):
         self.setWindowTitle("Авторизация")
-        self.setFixedSize(360, 260)
+        self.setFixedSize(360, 280)
 
         layout = QVBoxLayout()
 
@@ -78,11 +73,11 @@ class LoginWindow(QWidget):
         Проверка данных пользователя.
         """
 
-        login = self.login_input.text().strip()
+        username = self.login_input.text().strip()
         password = self.password_input.text().strip()
         role = self.role_selector.currentText()
 
-        if not login or not password:
+        if not username or not password:
             QMessageBox.warning(
                 self,
                 "Ошибка",
@@ -90,9 +85,8 @@ class LoginWindow(QWidget):
             )
             return
 
-        # ---- АВТОРИЗАЦИЯ ----
-        # В реальном ПО здесь была бы БД пользователей
-        if role == "Администратор" and login != "admin":
+        # ---- ПРОВЕРКА РОЛИ ----
+        if role == "Администратор" and username != "admin":
             QMessageBox.warning(
                 self,
                 "Ошибка",
@@ -100,6 +94,6 @@ class LoginWindow(QWidget):
             )
             return
 
-        # УСПЕШНЫЙ ВХОД
-        self.login_success.emit(role)
+        # ---- УСПЕШНЫЙ ВХОД ----
+        self.login_success.emit(username, role)
         self.close()
