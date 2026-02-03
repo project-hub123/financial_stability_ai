@@ -3,9 +3,9 @@
 Руководитель ВКР: Коротков Дмитрий Павлович
 
 Назначение модуля:
-Обучение второй модели машинного обучения (Logistic Regression)
-и корректное сравнение с моделью Random Forest
-на ОДИНАКОВОМ наборе признаков.
+Обучение второй модели (Logistic Regression)
+и корректное сравнение с Random Forest
+с учетом реального набора признаков model1.
 """
 
 import os
@@ -50,14 +50,13 @@ MODEL2_PATH = os.path.join(
 # ============================================================
 
 df = pd.read_csv(DATA_PATH)
-
-# признаки БЕРЁМ ТЕ ЖЕ, что использовались при обучении model1
-X_features = calculate_financial_ratios(df)
-
 y = df["label"]
 
+# считаем ВСЕ признаки (расширенный набор)
+X_all = calculate_financial_ratios(df)
+
 X_train, X_test, y_train, y_test = train_test_split(
-    X_features,
+    X_all,
     y,
     test_size=0.25,
     random_state=42,
@@ -66,44 +65,53 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 
 # ============================================================
-# ОБУЧЕНИЕ ВТОРОЙ МОДЕЛИ
-# ============================================================
-
-model2 = LogisticRegression(
-    max_iter=2000,
-    solver="lbfgs"
-)
-
-model2.fit(X_train, y_train)
-
-
-# ============================================================
-# ОЦЕНКА ВТОРОЙ МОДЕЛИ
-# ============================================================
-
-y_pred_2 = model2.predict(X_test)
-
-metrics_model2 = {
-    "Accuracy": accuracy_score(y_test, y_pred_2),
-    "Precision": precision_score(y_test, y_pred_2),
-    "Recall": recall_score(y_test, y_pred_2),
-    "F1-score": f1_score(y_test, y_pred_2)
-}
-
-
-# ============================================================
-# ЗАГРУЗКА И ОЦЕНКА ПЕРВОЙ МОДЕЛИ
+# ЗАГРУЗКА ПЕРВОЙ МОДЕЛИ И ВЫРАВНИВАНИЕ ПРИЗНАКОВ
 # ============================================================
 
 model1 = joblib.load(MODEL1_PATH)
 
-y_pred_1 = model1.predict(X_test)
+# КЛЮЧЕВОЕ МЕСТО
+expected_features = list(model1.feature_names_in_)
+
+# оставляем ТОЛЬКО те признаки, которые знает model1
+X_test_m1 = X_test[expected_features]
+
+
+# ============================================================
+# ОЦЕНКА ПЕРВОЙ МОДЕЛИ
+# ============================================================
+
+y_pred_1 = model1.predict(X_test_m1)
 
 metrics_model1 = {
     "Accuracy": accuracy_score(y_test, y_pred_1),
     "Precision": precision_score(y_test, y_pred_1),
     "Recall": recall_score(y_test, y_pred_1),
     "F1-score": f1_score(y_test, y_pred_1)
+}
+
+
+# ============================================================
+# ОБУЧЕНИЕ ВТОРОЙ МОДЕЛИ (НА ТОМ ЖЕ НАБОРЕ ПРИЗНАКОВ)
+# ============================================================
+
+X_train_m2 = X_train[expected_features]
+X_test_m2 = X_test[expected_features]
+
+model2 = LogisticRegression(
+    max_iter=2000,
+    solver="lbfgs"
+)
+
+model2.fit(X_train_m2, y_train)
+
+y_pred_2 = model2.predict(X_test_m2)
+
+metrics_model2 = {
+    "Accuracy": accuracy_score(y_test, y_pred_2),
+    "Precision": precision_score(y_test, y_pred_2),
+    "Recall": recall_score(y_test, y_pred_2),
+    "F1-score": f1_score(y_test, y_pred_2)
 }
 
 
