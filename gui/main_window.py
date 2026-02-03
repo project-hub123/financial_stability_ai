@@ -2,16 +2,11 @@
 ФИО автора: Кирченков Александр Николаевич
 Руководитель ВКР: Коротков Дмитрий Павлович
 
-Тема ВКР:
-«Интеллектуальный анализ финансовой устойчивости предприятия
-и проблемы ее повышения
-(на примере ООО „Научно-технический центр "АРМ-Регистр"»)»
-
 Назначение файла:
 Главное окно десктопного приложения.
 Обеспечивает разграничение прав доступа,
-навигацию по функциям системы и доступ
-к справочной информации.
+навигацию по функциям системы, смену пароля
+и доступ к справочной информации.
 """
 
 from PyQt5.QtWidgets import (
@@ -25,13 +20,14 @@ from gui.predict_window import PredictWindow
 from gui.analysis_window import AnalysisWindow
 from gui.admin_window import AdminWindow
 from gui.help_window import HelpWindow
+from gui.change_password_window import ChangePasswordWindow
 
 
 class MainWindow(QWidget):
-    def __init__(self, role: str):
+    def __init__(self, username: str, role: str):
         super().__init__()
 
-        # Роль пользователя задаётся при авторизации
+        self.username = username
         self.current_role = role
 
         self.init_ui()
@@ -45,7 +41,7 @@ class MainWindow(QWidget):
         self.setWindowTitle(
             "Интеллектуальный анализ финансовой устойчивости"
         )
-        self.setFixedSize(760, 500)
+        self.setFixedSize(760, 540)
 
         self.setStyleSheet("""
             QWidget {
@@ -79,14 +75,8 @@ class MainWindow(QWidget):
             QPushButton:hover {
                 background-color: #1d4ed8;
             }
-            QPushButton:pressed {
-                background-color: #1e40af;
-            }
             QPushButton#danger {
                 background-color: #6b7280;
-            }
-            QPushButton#danger:hover {
-                background-color: #4b5563;
             }
         """)
 
@@ -119,27 +109,26 @@ class MainWindow(QWidget):
 
         user_layout = QHBoxLayout()
 
-        role_label = QLabel("Роль пользователя:")
-        self.role_value = QLabel(self.current_role)
-        self.role_value.setObjectName("role")
+        user_label = QLabel(f"Пользователь: {self.username}")
+        role_label = QLabel(f"Роль: {self.current_role}")
+        role_label.setObjectName("role")
 
+        user_layout.addWidget(user_label)
+        user_layout.addSpacing(20)
         user_layout.addWidget(role_label)
-        user_layout.addWidget(self.role_value)
         user_layout.addStretch()
 
         main_layout.addLayout(user_layout)
 
         # -----------------------------------------------------
-        # КНОПКИ ДЕЙСТВИЙ
+        # КНОПКИ
         # -----------------------------------------------------
-
-        buttons_layout = QVBoxLayout()
-        buttons_layout.setSpacing(12)
 
         self.btn_predict = QPushButton("Оценка финансовой устойчивости")
         self.btn_analysis = QPushButton("Анализ коэффициентов")
         self.btn_train = QPushButton("Обучение модели")
         self.btn_admin = QPushButton("Панель администратора")
+        self.btn_change_password = QPushButton("Сменить пароль")
         self.btn_help = QPushButton("Справка о системе")
         self.btn_exit = QPushButton("Выход")
         self.btn_exit.setObjectName("danger")
@@ -148,18 +137,18 @@ class MainWindow(QWidget):
         self.btn_analysis.clicked.connect(self.on_analysis)
         self.btn_train.clicked.connect(self.on_train)
         self.btn_admin.clicked.connect(self.on_admin)
+        self.btn_change_password.clicked.connect(self.on_change_password)
         self.btn_help.clicked.connect(self.on_help)
         self.btn_exit.clicked.connect(self.close)
 
-        buttons_layout.addWidget(self.btn_predict)
-        buttons_layout.addWidget(self.btn_analysis)
-        buttons_layout.addWidget(self.btn_train)
-        buttons_layout.addWidget(self.btn_admin)
-        buttons_layout.addWidget(self.btn_help)
-        buttons_layout.addWidget(self.btn_exit)
-
-        main_layout.addSpacing(20)
-        main_layout.addLayout(buttons_layout)
+        main_layout.addSpacing(15)
+        main_layout.addWidget(self.btn_predict)
+        main_layout.addWidget(self.btn_analysis)
+        main_layout.addWidget(self.btn_train)
+        main_layout.addWidget(self.btn_admin)
+        main_layout.addWidget(self.btn_change_password)
+        main_layout.addWidget(self.btn_help)
+        main_layout.addWidget(self.btn_exit)
 
         self.setLayout(main_layout)
 
@@ -168,8 +157,6 @@ class MainWindow(QWidget):
     # ---------------------------------------------------------
 
     def update_access_rights(self):
-        """Разграничение доступа в зависимости от роли."""
-
         if self.current_role == "Пользователь":
             self.btn_analysis.setEnabled(False)
             self.btn_train.setEnabled(False)
@@ -186,7 +173,7 @@ class MainWindow(QWidget):
             self.btn_admin.setEnabled(True)
 
     # ---------------------------------------------------------
-    # ОБРАБОТЧИКИ КНОПОК
+    # ОБРАБОТЧИКИ
     # ---------------------------------------------------------
 
     def on_predict(self):
@@ -202,39 +189,23 @@ class MainWindow(QWidget):
                 "только аналитику и администратору."
             )
             return
-
         self.analysis_window = AnalysisWindow(self.current_role)
         self.analysis_window.show()
 
     def on_train(self):
-        if self.current_role != "Администратор":
-            QMessageBox.warning(
-                self,
-                "Доступ запрещён",
-                "Обучение модели доступно "
-                "только администратору."
-            )
-            return
-
         QMessageBox.information(
             self,
             "Обучение модели",
-            "Запуск обучения осуществляется "
-            "из панели администратора."
+            "Обучение выполняется из панели администратора."
         )
 
     def on_admin(self):
-        if self.current_role != "Администратор":
-            QMessageBox.warning(
-                self,
-                "Доступ запрещён",
-                "Панель администратора доступна "
-                "только администратору."
-            )
-            return
-
         self.admin_window = AdminWindow()
         self.admin_window.show()
+
+    def on_change_password(self):
+        self.cp_window = ChangePasswordWindow(self.username)
+        self.cp_window.show()
 
     def on_help(self):
         self.help_window = HelpWindow()
