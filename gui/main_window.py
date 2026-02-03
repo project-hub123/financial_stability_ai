@@ -9,8 +9,9 @@
 
 Назначение файла:
 Главное окно десктопного приложения.
-Обеспечивает выбор пользователя, разграничение прав доступа
-и навигацию по функциям интеллектуальной системы.
+Обеспечивает выбор пользователя, разграничение прав доступа,
+навигацию по функциям интеллектуальной системы и доступ
+к справочной информации.
 """
 
 from PyQt5.QtWidgets import (
@@ -23,6 +24,7 @@ from PyQt5.QtCore import Qt
 from gui.predict_window import PredictWindow
 from gui.analysis_window import AnalysisWindow
 from gui.admin_window import AdminWindow
+from gui.help_window import HelpWindow
 
 
 class MainWindow(QWidget):
@@ -42,7 +44,7 @@ class MainWindow(QWidget):
         self.setWindowTitle(
             "Интеллектуальный анализ финансовой устойчивости"
         )
-        self.setFixedSize(740, 450)
+        self.setFixedSize(760, 500)
 
         self.setStyleSheet("""
             QWidget {
@@ -153,6 +155,7 @@ class MainWindow(QWidget):
         self.btn_analysis = QPushButton("Анализ коэффициентов")
         self.btn_train = QPushButton("Обучение модели")
         self.btn_admin = QPushButton("Панель администратора")
+        self.btn_help = QPushButton("Справка о системе")
         self.btn_exit = QPushButton("Выход")
         self.btn_exit.setObjectName("danger")
 
@@ -160,12 +163,14 @@ class MainWindow(QWidget):
         self.btn_analysis.clicked.connect(self.on_analysis)
         self.btn_train.clicked.connect(self.on_train)
         self.btn_admin.clicked.connect(self.on_admin)
+        self.btn_help.clicked.connect(self.on_help)
         self.btn_exit.clicked.connect(self.close)
 
         buttons_layout.addWidget(self.btn_predict)
         buttons_layout.addWidget(self.btn_analysis)
         buttons_layout.addWidget(self.btn_train)
         buttons_layout.addWidget(self.btn_admin)
+        buttons_layout.addWidget(self.btn_help)
         buttons_layout.addWidget(self.btn_exit)
 
         main_layout.addSpacing(20)
@@ -254,3 +259,7 @@ class MainWindow(QWidget):
 
         self.admin_window = AdminWindow()
         self.admin_window.show()
+
+    def on_help(self):
+        self.help_window = HelpWindow()
+        self.help_window.show()
