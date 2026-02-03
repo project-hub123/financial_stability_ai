@@ -1,0 +1,14 @@
+{
+  "admin": {
+    "password": "admin",
+    "role": "Администратор"
+  },
+  "analyst": {
+    "password": "123",
+    "role": "Аналитик"
+  },
+  "user": {
+    "password": "123",
+    "role": "Пользователь"
+  }
+}
