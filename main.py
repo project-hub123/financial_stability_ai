@@ -12,17 +12,20 @@ from PyQt5.QtWidgets import QApplication
 
 Назначение файла:
 Точка входа десктопного приложения.
-Обеспечивает запуск окна авторизации и главного окна системы.
+Обеспечивает запуск окна авторизации
+и главного окна системы с учетом ролей.
 """
 
 from gui.login_window import LoginWindow
 from gui.main_window import MainWindow
 
 
-def start_main(role: str):
-    """Запуск главного окна после успешной авторизации"""
+def start_main(username: str, role: str):
+    """
+    Запуск главного окна после успешной авторизации
+    """
     global main_window
-    main_window = MainWindow(role)
+    main_window = MainWindow(username, role)
     main_window.show()
 
 
