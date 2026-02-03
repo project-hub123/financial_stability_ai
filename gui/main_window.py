@@ -9,8 +9,8 @@
 
 Назначение файла:
 Главное окно десктопного приложения.
-Обеспечивает выбор пользователя, доступ ко всем функциям системы
-и навигацию по интеллектуальному анализу финансовой устойчивости.
+Обеспечивает выбор пользователя, разграничение прав доступа
+и навигацию по функциям интеллектуальной системы.
 """
 
 from PyQt5.QtWidgets import (
@@ -19,12 +19,19 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 
+# Окна системы
+from gui.predict_window import PredictWindow
+from gui.analysis_window import AnalysisWindow
+from gui.admin_window import AdminWindow
+
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.current_role = "Аналитик"
+        # Роли: Пользователь / Аналитик / Администратор
+        self.current_role = "Пользователь"
+
         self.init_ui()
 
     # ---------------------------------------------------------
@@ -35,7 +42,7 @@ class MainWindow(QWidget):
         self.setWindowTitle(
             "Интеллектуальный анализ финансовой устойчивости"
         )
-        self.setFixedSize(720, 420)
+        self.setFixedSize(740, 450)
 
         self.setStyleSheet("""
             QWidget {
@@ -90,9 +97,7 @@ class MainWindow(QWidget):
         # Заголовок
         # -----------------------------------------------------
 
-        title = QLabel(
-            "ООО «НТЦ АРМ-Регистр»"
-        )
+        title = QLabel("ООО «НТЦ АРМ-Регистр»")
         title.setObjectName("title")
 
         subtitle = QLabel(
@@ -103,7 +108,6 @@ class MainWindow(QWidget):
         main_layout.addWidget(title)
         main_layout.addWidget(subtitle)
 
-        # Линия
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
         line.setFixedHeight(1)
@@ -116,12 +120,13 @@ class MainWindow(QWidget):
 
         user_layout = QHBoxLayout()
 
-        role_label = QLabel("Текущий пользователь:")
+        role_label = QLabel("Текущая роль:")
         self.role_value = QLabel(self.current_role)
         self.role_value.setObjectName("role")
 
         self.role_selector = QComboBox()
         self.role_selector.addItems([
+            "Пользователь",
             "Аналитик",
             "Администратор"
         ])
@@ -138,29 +143,29 @@ class MainWindow(QWidget):
         main_layout.addLayout(user_layout)
 
         # -----------------------------------------------------
-        # Кнопки действий
+        # КНОПКИ ДЕЙСТВИЙ
         # -----------------------------------------------------
 
         buttons_layout = QVBoxLayout()
         buttons_layout.setSpacing(12)
 
-        self.btn_train = QPushButton("Обучение модели")
-        self.btn_predict = QPushButton("Оценка устойчивости")
+        self.btn_predict = QPushButton("Оценка финансовой устойчивости")
         self.btn_analysis = QPushButton("Анализ коэффициентов")
-        self.btn_reports = QPushButton("Отчёты и результаты")
+        self.btn_train = QPushButton("Обучение модели")
+        self.btn_admin = QPushButton("Панель администратора")
         self.btn_exit = QPushButton("Выход")
         self.btn_exit.setObjectName("danger")
 
-        self.btn_train.clicked.connect(self.on_train)
         self.btn_predict.clicked.connect(self.on_predict)
         self.btn_analysis.clicked.connect(self.on_analysis)
-        self.btn_reports.clicked.connect(self.on_reports)
+        self.btn_train.clicked.connect(self.on_train)
+        self.btn_admin.clicked.connect(self.on_admin)
         self.btn_exit.clicked.connect(self.close)
 
-        buttons_layout.addWidget(self.btn_train)
         buttons_layout.addWidget(self.btn_predict)
         buttons_layout.addWidget(self.btn_analysis)
-        buttons_layout.addWidget(self.btn_reports)
+        buttons_layout.addWidget(self.btn_train)
+        buttons_layout.addWidget(self.btn_admin)
         buttons_layout.addWidget(self.btn_exit)
 
         main_layout.addSpacing(20)
@@ -181,46 +186,71 @@ class MainWindow(QWidget):
 
     def update_access_rights(self):
         """
-        Управление доступом к функциям системы
-        в зависимости от роли пользователя.
+        Разграничение доступа в зависимости от роли пользователя.
         """
 
-        if self.current_role == "Аналитик":
+        if self.current_role == "Пользователь":
+            self.btn_analysis.setEnabled(False)
             self.btn_train.setEnabled(False)
-        else:
+            self.btn_admin.setEnabled(False)
+
+        elif self.current_role == "Аналитик":
+            self.btn_analysis.setEnabled(True)
+            self.btn_train.setEnabled(False)
+            self.btn_admin.setEnabled(False)
+
+        elif self.current_role == "Администратор":
+            self.btn_analysis.setEnabled(True)
             self.btn_train.setEnabled(True)
+            self.btn_admin.setEnabled(True)
 
     # ---------------------------------------------------------
     # ОБРАБОТЧИКИ КНОПОК
     # ---------------------------------------------------------
 
+    def on_predict(self):
+        self.predict_window = PredictWindow()
+        self.predict_window.show()
+
+    def on_analysis(self):
+        if self.current_role == "Пользователь":
+            QMessageBox.warning(
+                self,
+                "Доступ запрещён",
+                "Анализ коэффициентов доступен\n"
+                "только аналитику и администратору."
+            )
+            return
+
+        self.analysis_window = AnalysisWindow(self.current_role)
+        self.analysis_window.show()
+
     def on_train(self):
+        if self.current_role != "Администратор":
+            QMessageBox.warning(
+                self,
+                "Доступ запрещён",
+                "Обучение модели доступно\n"
+                "только администратору."
+            )
+            return
+
         QMessageBox.information(
             self,
             "Обучение модели",
             "Запуск процедуры обучения модели\n"
-            "доступен только администратору."
+            "осуществляется из панели администратора."
         )
 
-    def on_predict(self):
-        QMessageBox.information(
-            self,
-            "Оценка устойчивости",
-            "Переход к модулю оценки финансовой устойчивости."
-        )
+    def on_admin(self):
+        if self.current_role != "Администратор":
+            QMessageBox.warning(
+                self,
+                "Доступ запрещён",
+                "Панель администратора доступна\n"
+                "только администратору."
+            )
+            return
 
-    def on_analysis(self):
-        QMessageBox.information(
-            self,
-            "Анализ коэффициентов",
-            "Отображение финансовых коэффициентов\n"
-            "и аналитических показателей."
-        )
-
-    def on_reports(self):
-        QMessageBox.information(
-            self,
-            "Отчёты",
-            "Формирование отчётов и просмотр\n"
-            "результатов интеллектуального анализа."
-        )
+        self.admin_window = AdminWindow()
+        self.admin_window.show()
