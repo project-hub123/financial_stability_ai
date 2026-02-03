@@ -1,14 +1,14 @@
 {
   "admin": {
-    "password": "admin",
+    "password": "1",
     "role": "Администратор"
   },
   "analyst": {
-    "password": "123",
+    "password": "1",
     "role": "Аналитик"
   },
   "user": {
-    "password": "123",
+    "password": "1",
     "role": "Пользователь"
   }
 }
